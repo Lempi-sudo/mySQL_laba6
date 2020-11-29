@@ -64,11 +64,11 @@ delimiter ;
 #3. Продемонстрировать возможность чтения незафиксированных изменений
 #при использовании уровня изоляции READ UNCOMMITTED и отсутствие
 #такой возможности при уровне изоляции READ COMMITTED.
-
+use football_league;
 
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 START TRANSACTION;
-INSERT INTO budget(cash) VALUE (26);
+INSERT INTO budget(cash) VALUE (416);
 COMMIT;
 
 
@@ -77,13 +77,131 @@ START TRANSACTION;
 INSERT INTO budget(cash) VALUE (36);
 COMMIT;
 
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+SELECT * FROM football_league.budget;
+
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SELECT * FROM football_league.budget;
+
+
 #4. Продемонстрировать возможность записи в уже прочитанные данные при
 #использовании уровня изоляции READ COMMITTED и отсутствие такой
 #возможности при уровне изоляции REPEATABLE READ. Для этого создать
 #две процедуры, одна из процедур в цикле выполняет запись в таблицу,
 #другая – чтение данных из этой таблицы.
 
+use football_league;
+
+drop procedure if exists f1;
+delimiter //
+CREATE PROCEDURE f1()
+BEGIN
+    SET AUTOCOMMIT=0;
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+	START TRANSACTION;
+    SELECT * 
+    FROM budget
+    WHERE id_budget = 1;
+    DO SLEEP(10);
+	SELECT * 
+    FROM budget
+    WHERE id_budget = 1;
+	COMMIT;
+END//
+delimiter ;
+
+drop procedure if exists r1;
+delimiter //
+CREATE PROCEDURE r1()
+BEGIN
+    SET AUTOCOMMIT=0;
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+	START TRANSACTION;
+	UPDATE budget b
+	SET cash = 2
+	WHERE id_budget = 1;
+	COMMIT;
+END//
+delimiter ;
+
+drop procedure if exists f2;
+delimiter //
+CREATE PROCEDURE f2()
+BEGIN
+    SET AUTOCOMMIT=0;
+    SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	START TRANSACTION;
+    SELECT * 
+    FROM budget
+    WHERE id_budget = 1;
+    DO SLEEP(10);
+	SELECT * 
+    FROM budget
+    WHERE id_budget = 1;
+	COMMIT;
+END//
+delimiter ;
+
+drop procedure if exists r2;
+delimiter //
+CREATE PROCEDURE r2()
+BEGIN
+    SET AUTOCOMMIT=0;
+    SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	START TRANSACTION;
+	UPDATE budget
+	SET cash = 3
+	WHERE id_budget = 1;
+	COMMIT;
+END//
+delimiter ;
+
+use football_league;
+call f1();
+
+use football_league;
+call r1();
+
+use football_league;
+call f2();
+
+use football_league;
+call r2();
+
+
 #5. Продемонстрировать возможность фантомного чтения при использовании
 #уровня изоляции READ COMMITTED и отсутствие такой возможности при
 #уровне изоляции REPEATABLE READ.
+
+#--------------------------------READ COMMITTED-----------------------
+SET AUTOCOMMIT=0;
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+START TRANSACTION;
+SELECT * FROM budget;
+DO SLEEP(10);
+SELECT * FROM budget;
+COMMIT;
+
+SET AUTOCOMMIT=0;
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+START TRANSACTION;
+INSERT INTO budget(cash)  VALUES(15);
+COMMIT;
+
+
+#--------------------------------REPEATABLE READ----------------
+SET AUTOCOMMIT=0;
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+START TRANSACTION;
+SELECT * FROM budget;
+DO SLEEP(10);
+SELECT * FROM budget;
+COMMIT;
+
+SET AUTOCOMMIT=0;
+SET TRANSACTION ISOLATION LEVEL REPEATABLE  READ ;
+START TRANSACTION;
+INSERT INTO budget(cash)  VALUES(17);
+COMMIT;
+
 
