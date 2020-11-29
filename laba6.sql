@@ -65,6 +65,18 @@ delimiter ;
 #при использовании уровня изоляции READ UNCOMMITTED и отсутствие
 #такой возможности при уровне изоляции READ COMMITTED.
 
+
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+START TRANSACTION;
+INSERT INTO budget(cash) VALUE (26);
+COMMIT;
+
+
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+START TRANSACTION; 
+INSERT INTO budget(cash) VALUE (36);
+COMMIT;
+
 #4. Продемонстрировать возможность записи в уже прочитанные данные при
 #использовании уровня изоляции READ COMMITTED и отсутствие такой
 #возможности при уровне изоляции REPEATABLE READ. Для этого создать
