@@ -35,6 +35,31 @@ delimiter ;
 #превышает заданного значения). При невыполнении данного условия
 #выполняется откат добавления такой строки (используя оператор ROLLBACK
 #TO SAVEPOINT).
+use football_league;
+
+drop procedure if exists add_cash ;
+
+delimiter $$
+create procedure add_cash(IN arg_max int)
+begin
+	DECLARE done INT DEFAULT TRUE;
+	DECLARE tmp INT DEFAULT 0;
+	start transaction;
+		while done do 
+        savepoint ret;
+        insert into budget(cash) value(1000);
+		set tmp =( select sum(b.cash) from budget b  );
+        if tmp > arg_max then
+			rollback to savepoint ret;
+            set done =false ;
+		end if ;
+        end while;
+        release savepoint ret;
+        commit;
+end$$
+delimiter ;
+
+
 
 #3. Продемонстрировать возможность чтения незафиксированных изменений
 #при использовании уровня изоляции READ UNCOMMITTED и отсутствие
